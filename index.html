@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSB Threshold Reference Tables (Printable)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* --- PRINT SPECIFIC CSS --- */
+        @media print {
+            @page {
+                size: A4;
+                margin: 10mm 10mm 10mm 10mm; /* Moderate margins for hole punching if needed */
+            }
+            
+            body {
+                background: white;
+                color: black;
+                font-size: 9pt; /* Condensed font size for data */
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            /* Hide interactive elements */
+            .no-print {
+                display: none !important;
+            }
+
+            /* Container overrides */
+            .max-w-6xl {
+                max-width: none !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            /* Card removal (remove shadows/borders for clean print) */
+            .card {
+                box-shadow: none !important;
+                border: none !important;
+                border-bottom: 1px solid #000 !important;
+                border-radius: 0 !important;
+                margin-bottom: 15px !important;
+                page-break-inside: avoid; /* Try to keep table blocks together */
+            }
+
+            /* Table compaction */
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                font-size: 8pt !important;
+            }
+
+            th, td {
+                padding: 2px 4px !important; /* Very tight padding */
+                border: 1px solid #000 !important; /* High contrast borders */
+            }
+
+            /* Header contrast */
+            thead th {
+                background-color: #eee !important;
+                color: #000 !important;
+                font-weight: 800 !important;
+            }
+
+            /* Repeat headers on new pages */
+            thead {
+                display: table-header-group;
+            }
+            
+            tfoot {
+                display: table-footer-group;
+            }
+            
+            tr {
+                page-break-inside: avoid;
+            }
+
+            /* Specific Visuals */
+            .bg-yellow-50 {
+                background-color: #f0f0f0 !important; /* Grayscale highlight */
+                font-weight: bold;
+            }
+
+            h1 { font-size: 16pt !important; margin-bottom: 2mm !important; }
+            h2 { font-size: 12pt !important; margin-top: 2mm !important; border: none !important; }
+            p, .ref-text { font-size: 7pt !important; color: #444 !important; }
+
+            /* Force 2 columns for Term tables if space permits, though usually 1 col is safer for width */
+            .grid-print-cols {
+                display: grid;
+                grid-template-columns: 1fr; 
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 p-6 min-h-screen">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Control Bar -->
+        <div class="no-print bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h3 class="font-bold text-slate-900">Print Control</h3>
+                <p class="text-sm text-slate-500">Optimized for A4 Paper. Values generated using clinical intervals (q3h/q6h) to save paper.</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="toggleDensity()" id="densityBtn" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold transition">
+                    Switch to Hourly Data
+                </button>
+                <button onclick="window.print()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold transition shadow-md hover:shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    Print Tables
+                </button>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <div class="mb-6 print:mb-2">
+            <h1 class="text-3xl font-bold text-slate-900 leading-tight">TSB Threshold Reference Tables</h1>
+            <p class="ref-text text-slate-600 mt-2 text-sm max-w-3xl">
+                Based on Malaysian Paediatric Protocols 5th Edition (Corrected Logic). 
+                Values start at 6 hours and plateau at >120h (Term) / >96h (Preterm).
+                <span class="no-print block mt-1 text-orange-600 text-xs font-semibold">
+                    * Values shown are linearly interpolated. Always consult the official chart for borderline cases.
+                </span>
+            </p>
+        </div>
+
+        <!-- Tables Container -->
+        <div id="tables-container" class="space-y-8 print:space-y-4">
+            <!-- Content injected by JS -->
+        </div>
+
+        <!-- Footer / Logic -->
+        <div class="mt-8 pt-6 border-t border-slate-300 text-xs text-slate-500 card">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2">
+                <div>
+                    <strong class="block text-slate-900 mb-1">Interpolation Method:</strong>
+                    Linear calculation between protocol anchor points.<br>
+                    Formula: y = y₁ + (x - x₁) × [(y₂ - y₁) / (x₂ - x₁)]
+                </div>
+                <div class="text-right print:text-right">
+                    <strong class="block text-slate-900 mb-1">Format:</strong>
+                    PT (Phototherapy) / ET (Exchange Transfusion)<br>
+                    Values in µmol/L
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA CONSTANTS ---
+        
+        // TABLE 1: NO Risk Factors (Term)
+        const MY_PT_NO_RISK = [[6, 101, 94, 84, 58], [12, 121, 113, 103, 94], [24, 159, 149, 140, 130], [48, 222, 212, 202, 191], [72, 270, 258, 248, 236], [96, 303, 291, 279, 267], [120, 306, 294, 280, 268]];
+        const MY_ET_NO_RISK = [[6, 321, 304, 285, 266], [12, 337, 320, 299, 280], [24, 366, 347, 327, 306], [48, 410, 395, 374, 354], [72, 443, 431, 412, 391], [96, 462, 455, 436, 419], [120, 462, 456, 439, 422]];
+
+        // TABLE 2: WITH Risk Factors (Term)
+        const MY_PT_RISK = [[6, 74, 67, 56, 48], [12, 94, 85, 75, 67], [24, 128, 120, 109, 101], [48, 180, 167, 157, 143], [72, 224, 212, 198, 184], [96, 255, 239, 224, 211], [120, 256, 241, 227, 213]];
+        const MY_ET_RISK = [[6, 265, 256, 246, 236], [12, 279, 268, 260, 250], [24, 303, 294, 284, 275], [48, 344, 337, 327, 316], [72, 378, 371, 357, 344], [96, 402, 395, 378, 361], [120, 402, 397, 381, 364]];
+        
+        // TABLE 3: PRETERM
+        const TABLE_PRETERM = {
+            23: [[6, 45, 90], [12, 55, 105], [24, 70, 130], [48, 100, 180], [72, 130, 230], [96, 130, 230]],
+            24: [[6, 45, 90], [12, 60, 110], [24, 70, 135], [48, 110, 185], [72, 140, 240], [96, 140, 240]],
+            25: [[6, 50, 100], [12, 60, 110], [24, 80, 140], [48, 110, 190], [72, 150, 250], [96, 150, 250]],
+            26: [[6, 50, 100], [12, 60, 110], [24, 80, 140], [48, 120, 200], [72, 160, 260], [96, 160, 260]],
+            27: [[6, 50, 100], [12, 60, 110], [24, 80, 140], [48, 130, 205], [72, 170, 270], [96, 170, 270]],
+            28: [[6, 50, 100], [12, 60, 110], [24, 90, 150], [48, 130, 210], [72, 180, 280], [96, 180, 280]],
+            29: [[6, 50, 100], [12, 65, 115], [24, 90, 150], [48, 140, 220], [72, 190, 290], [96, 190, 290]],
+            30: [[6, 50, 100], [12, 65, 115], [24, 95, 150], [48, 145, 220], [72, 200, 300], [96, 200, 300]],
+            31: [[6, 50, 100], [12, 70, 120], [24, 100, 155], [48, 155, 230], [72, 210, 310], [96, 210, 310]],
+            32: [[6, 50, 100], [12, 70, 120], [24, 100, 160], [48, 160, 240], [72, 220, 320], [96, 220, 320]],
+            33: [[6, 50, 100], [12, 70, 120], [24, 100, 160], [48, 170, 245], [72, 230, 330], [96, 230, 330]],
+            34: [[6, 50, 100], [12, 70, 120], [24, 110, 170], [48, 170, 250], [72, 240, 340], [96, 240, 340]],
+        };
+
+        // --- MATH UTILS ---
+        function interpolate(age, table, colIndex) {
+            let lower = table[0];
+            let upper = table[table.length - 1];
+            
+            if (age < 6) return null; 
+            if (age >= 120) return table[table.length - 1][colIndex];
+
+            for (let i = 0; i < table.length - 1; i++) {
+                if (age >= table[i][0] && age <= table[i+1][0]) {
+                    lower = table[i];
+                    upper = table[i+1];
+                    break;
+                }
+            }
+            const ratio = (age - lower[0]) / (upper[0] - lower[0]);
+            return lower[colIndex] + ratio * (upper[colIndex] - lower[colIndex]);
+        }
+
+        function interpolatePreterm(age, dataPoints) {
+            if (age < 6) return null;
+            if (age >= 96) return { pt: dataPoints[dataPoints.length - 1][1], et: dataPoints[dataPoints.length - 1][2] };
+
+            let lower = dataPoints[0];
+            let upper = dataPoints[dataPoints.length - 1];
+
+            for (let i = 0; i < dataPoints.length - 1; i++) {
+                if (age >= dataPoints[i][0] && age <= dataPoints[i+1][0]) {
+                    lower = dataPoints[i];
+                    upper = dataPoints[i+1];
+                    break;
+                }
+            }
+            const ratio = (age - lower[0]) / (upper[0] - lower[0]);
+            const pt = lower[1] + ratio * (upper[1] - lower[1]);
+            const et = lower[2] + ratio * (upper[2] - lower[2]);
+            return { pt, et };
+        }
+
+        // --- GENERATION HELPERS ---
+        
+        // This generates "Clinical Intervals" to save paper
+        // 0-24h: Every 3h (High risk)
+        // 24-48h: Every 4h
+        // 48h+: Every 6h
+        function getClinicalHours(maxHour) {
+            let hours = [];
+            hours.push(6); // Start
+            
+            let h = 9;
+            while (h <= maxHour) {
+                hours.push(h);
+                if (h < 24) h += 3;
+                else if (h < 48) h += 4;
+                else h += 6;
+            }
+            return hours;
+        }
+
+        function getAllHours(maxHour) {
+            return Array.from({length: maxHour - 5}, (_, i) => i + 6);
+        }
+
+        // --- RENDER LOGIC ---
+        let useDenseMode = false; // Default to "Print Optimized" mode
+
+        function toggleDensity() {
+            useDenseMode = !useDenseMode;
+            document.getElementById('densityBtn').innerText = useDenseMode ? "Switch to Condensed (Print)" : "Switch to Hourly (Web)";
+            renderAll();
+        }
+
+        function createTable(title, headers, rows) {
+            const card = document.createElement('div');
+            card.className = "card bg-white shadow-sm rounded-lg overflow-hidden border border-slate-200";
+            
+            // Header
+            const headerDiv = document.createElement('div');
+            headerDiv.className = "bg-slate-50 px-4 py-2 border-b border-slate-200 print:bg-white print:border-b-2 print:border-black print:px-0";
+            headerDiv.innerHTML = `<h2 class="text-lg font-bold text-slate-800">${title}</h2>`;
+            card.appendChild(headerDiv);
+
+            // Table Wrapper
+            const wrapper = document.createElement('div');
+            wrapper.className = "overflow-x-auto";
+            
+            const table = document.createElement('table');
+            table.className = "w-full text-sm text-center text-slate-700";
+
+            // Table Head
+            const thead = document.createElement('thead');
+            const trHead = document.createElement('tr');
+            headers.forEach(h => {
+                const th = document.createElement('th');
+                th.className = "px-3 py-2 font-bold whitespace-nowrap bg-slate-100 text-slate-700 border-b border-slate-200 text-xs uppercase tracking-wider print:text-black";
+                th.innerText = h;
+                trHead.appendChild(th);
+            });
+            thead.appendChild(trHead);
+            table.appendChild(thead);
+
+            // Table Body
+            const tbody = document.createElement('tbody');
+            rows.forEach((row, i) => {
+                const tr = document.createElement('tr');
+                // Alternating colors for web, plain for print
+                tr.className = i % 2 === 0 ? "bg-white print:bg-white" : "bg-slate-50 print:bg-white";
+                
+                // Highlight Plateau row
+                if (row[0].toString().includes(">")) {
+                    tr.className += " bg-yellow-50 font-bold border-t-2 border-slate-200 print:border-t-2 print:border-black";
+                }
+
+                row.forEach((cell, idx) => {
+                    const td = document.createElement('td');
+                    td.className = idx === 0 
+                        ? "px-3 py-1 font-bold text-slate-900 border-r border-slate-200 font-mono" 
+                        : "px-3 py-1 font-mono text-slate-600 border-r border-slate-200 last:border-r-0";
+                    td.innerText = cell;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+            wrapper.appendChild(table);
+            card.appendChild(wrapper);
+            
+            return card;
+        }
+
+        function renderAll() {
+            const container = document.getElementById('tables-container');
+            container.innerHTML = '';
+
+            // 1. TERM
+            const maxTerm = 120;
+            const hoursTerm = useDenseMode ? getAllHours(maxTerm) : getClinicalHours(maxTerm);
+            
+            const formatTerm = (hArr, ptData, etData) => {
+                let r = hArr.map(h => {
+                    const getVal = (col) => `${Math.round(interpolate(h, ptData, col))}/${Math.round(interpolate(h, etData, col))}`;
+                    return [`${h}h`, getVal(1), getVal(2), getVal(3), getVal(4)];
+                });
+                // Plateau row
+                const last = (col) => `${Math.round(ptData[ptData.length-1][col])}/${Math.round(etData[etData.length-1][col])}`;
+                r.push([">120h", last(1), last(2), last(3), last(4)]);
+                return r;
+            };
+
+            const hTerm = ["Age", "≥38w", "37w", "36w", "35w"];
+            container.appendChild(createTable("Term (≥35w) - NO Risk Factors", hTerm, formatTerm(hoursTerm, MY_PT_NO_RISK, MY_ET_NO_RISK)));
+            container.appendChild(createTable("Term (≥35w) - WITH Neurotoxicity Risk Factors", hTerm, formatTerm(hoursTerm, MY_PT_RISK, MY_ET_RISK)));
+
+            // 2. PRETERM
+            const maxPreterm = 96;
+            const hoursPreterm = useDenseMode ? getAllHours(maxPreterm) : getClinicalHours(maxPreterm);
+
+            const formatPreterm = (hArr, weeks) => {
+                let r = hArr.map(h => {
+                    const cols = [`${h}h`];
+                    weeks.forEach(w => {
+                        const res = interpolatePreterm(h, TABLE_PRETERM[w]);
+                        cols.push(`${Math.round(res.pt)}/${Math.round(res.et)}`);
+                    });
+                    return cols;
+                });
+                const cols = [">96h"];
+                weeks.forEach(w => {
+                    const res = interpolatePreterm(96, TABLE_PRETERM[w]);
+                    cols.push(`${Math.round(res.pt)}/${Math.round(res.et)}`);
+                });
+                r.push(cols);
+                return r;
+            }
+
+            const wA = [34, 33, 32, 31, 30, 29, 28];
+            const hA = ["Age", ...wA.map(w => `${w}w`)];
+            container.appendChild(createTable("Preterm (28w - 34w) - PT / ET", hA, formatPreterm(hoursPreterm, wA)));
+
+            const wB = [27, 26, 25, 24, 23];
+            const hB = ["Age", ...wB.map(w => `${w}w`)];
+            container.appendChild(createTable("Extreme Preterm (23w - 27w) - PT / ET", hB, formatPreterm(hoursPreterm, wB)));
+        }
+
+        // Init
+        renderAll();
+
+    </script>
+</body>
+</html>
